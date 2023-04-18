@@ -637,7 +637,7 @@ app.controller('MainController', ['$mdSidenav', '$window', 'UiEvents', '$locatio
                         .ariaLabel(msg.ok)
                         .ok(msg.msg.ok || msg.ok)
                 }
-                confirm._options.template = '<md-dialog md-theme="{{ dialog.theme || dialog.defaultTheme }}" aria-label="{{ dialog.ariaLabel }}" class="' + msg.toastClass + '">' +
+                confirm._options.template = msg.template || '<md-dialog md-theme="{{ dialog.theme || dialog.defaultTheme }}" aria-label="{{ dialog.ariaLabel }}" ng-class="' + msg.toastClass + '">' +
                     '<md-dialog-content class="md-dialog-content" role="document" tabIndex="-1">' +
                         '<h2 class="md-title">{{ dialog.title }}</h2>' +
                         '<div ng-if="::dialog.mdHtmlContent" class="md-dialog-content-body"ng-bind-html="::dialog.mdHtmlContent | trusted"></div>' +
@@ -650,18 +650,44 @@ app.controller('MainController', ['$mdSidenav', '$window', 'UiEvents', '$locatio
                         '<md-button ng-click="dialog.hide()" class="md-primary md-confirm-button" md-autofocus="dialog.$type===\'alert\'" ng-disabled="dialog.required && !dialog.result">{{ dialog.ok }}</md-button>' +
                     '</md-dialog-actions>' +
                 '</md-dialog>';
-                $mdDialog.show(confirm, { panelClass:'nr-dashboard-dialog' }).then(
-                    function(res) {
-                        msg.msg.payload = msg.ok;
-                        if (res !== true) { msg.msg.payload = res; }
-                        if (res == undefined) { msg.msg.payload = ""; }
-                        events.emit({ id:msg.id, value:msg });
-                    },
-                    function() {
-                        msg.msg.payload = msg.cancel;
-                        events.emit({ id:msg.id, value:msg });
+                let fnConfirm = function(res) {
+                    msg.msg.payload = msg.ok;
+                    if (res !== true) { msg.msg.payload = res; }
+                    if (res == undefined) { msg.msg.payload = ""; }
+                    events.emit({ id:msg.id, value:msg.msg });
+                };
+                let fnCancel = function() {
+                    msg.msg.payload = msg.cancel;
+                    events.emit({ id:msg.id, value:msg.msg });
+                };
+                confirm._options.fields = msg.fields;
+                let getFunctionFromString = function(value) {
+                    if (typeof String.prototype.parseFunction != 'function') {
+                        String.prototype.parseFunction = function () {
+                            let funcReg = /function *\(([^()]*)\)[ \n\t]*{([\n\t]*.*[\n\t]*)*}/gmi;
+                            const match = funcReg.exec(this.replace(/\n/g, ' '));
+                            if (match) {
+                                return new Function(match[1].split(','), match[2]);
+                            }
+                            return null;
+                        };
                     }
-                );
+                    let valueFunction;
+                    let fnFunction = null;
+                    let that = { $scope: $scope, config: msg, events: events };
+                    if (typeof value === "string" && (valueFunction = value.parseFunction())) {
+                        fnFunction=valueFunction.bind(that); // to enable this.send() for callback functions.
+                    }
+                    return fnFunction;
+                };
+
+                if ( msg.fnConfirm ) {
+                    fnConfirm = getFunctionFromString(msg.fnConfirm);
+                }
+                if ( msg.fnCancel ) {
+                    fnCancel = getFunctionFromString(msg.fnCancel);
+                }
+                $mdDialog.show(confirm, { panelClass:'nr-dashboard-dialog' }).then( fnConfirm, fnCancel );
             }
             else {
                 if (msg.hasOwnProperty("message") || msg.hasOwnProperty("title")) {
