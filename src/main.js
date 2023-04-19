@@ -656,11 +656,8 @@ app.controller('MainController', ['$mdSidenav', '$window', 'UiEvents', '$locatio
                     if (res == undefined) { msg.msg.payload = ""; }
                     events.emit({ id:msg.id, value:msg.msg });
                 };
-                let fnCancel = function() {
-                    msg.msg.payload = msg.cancel;
-                    events.emit({ id:msg.id, value:msg.msg });
-                };
                 confirm._options.fields = msg.fields;
+                confirm._options.parameters = msg.parameters;
                 let getFunctionFromString = function(value) {
                     if (typeof String.prototype.parseFunction != 'function') {
                         String.prototype.parseFunction = function () {
@@ -684,10 +681,13 @@ app.controller('MainController', ['$mdSidenav', '$window', 'UiEvents', '$locatio
                 if ( msg.fnConfirm ) {
                     fnConfirm = getFunctionFromString(msg.fnConfirm);
                 }
-                if ( msg.fnCancel ) {
-                    fnCancel = getFunctionFromString(msg.fnCancel);
-                }
-                $mdDialog.show(confirm, { panelClass:'nr-dashboard-dialog' }).then( fnConfirm, fnCancel );
+                $mdDialog.show(confirm, { panelClass:'nr-dashboard-dialog' }).then(
+                    fnConfirm,
+                    function() {
+                        msg.msg.payload = msg.cancel;
+                        events.emit({ id:msg.id, value:msg.msg });
+                    }
+                );
             }
             else {
                 if (msg.hasOwnProperty("message") || msg.hasOwnProperty("title")) {
