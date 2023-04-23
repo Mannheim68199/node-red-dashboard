@@ -706,6 +706,129 @@ app.controller('MainController', ['$mdSidenav', '$window', 'UiEvents', '$locatio
             }
         });
 
+        events.on('show-dialog', function (msg) {
+            if (msg.raw !== true) {
+                var temp = document.createElement('div');
+                temp.textContent = msg.message;
+                msg.message = temp.innerHTML;
+            }
+            if (msg.message == "") { $mdDialog.cancel(); return; }
+            let dialog = $mdDialog.prompt()
+                .title(msg.title)
+                .htmlContent(msg.message)
+                .initialValue("")
+                .ariaLabel(msg.ok + " or " + msg.cancel)
+                .ok(msg.msg.ok || msg.ok)
+                .cancel(msg.msg.cancel || msg.cancel);
+            dialog._options.focusOnOpen = false;
+            dialog._options.fields = msg.fields;
+            dialog._options.parameters = msg.parameters;
+
+            let fnConfirm = function(res) {
+                debugger;
+                dialog.msg.payload = dialog.ok;
+                let oResult = {};
+                let bError = false;
+                dialog.fields.forEach( oField => {
+                    if ( oField.required && !oField.value && oField.typ2 !== 'switch' ) {
+                        bError = true;
+                        console.log("Value missing for field: " + oField.label );
+                    } else {
+                        switch (oField.type) {
+                            case "time":
+                                let dDateTime = new Date(oField.value);
+                                oResult[oField.label] = dDateTime.toLocaleString().substring(10,15);
+                                break;
+                            case "date":
+                                let dDate = new Date(oField.value);
+                                dDate.setHours(dDate.getHours()+12);
+                                oResult[oField.label] = dDate.toISOString().substring(0,10) || "";
+                                break;
+                            default:
+                                oResult[oField.label] = oField.value;
+                        }
+                    }
+                });
+                if (!bError) {
+                    dialog.msg.payload = oResult;
+                    if (oResult === {}) { dialog.msg.payload = ""; }
+                    this.events.emit({ id: dialog.id, value:dialog.msg });
+                }
+            };
+            let getTemplate = function(config) {
+                let sy = ui.getSizes().sy;
+                let cy = ui.getSizes().cy;
+                let rowHeight = sy;
+                let height = rowHeight * ((config.splitLayout == true) ? Math.ceil(config.options.length/2) : config.options.length);
+                let width = (config.splitLayout == true) ? 450 : 250;
+                let rowCount = (config.splitLayout == true) ? Math.ceil(config.options.length/2) : config.options.length;
+                rowCount += config.topic == '' ? 1 : 2
+                config.options.forEach( oField => {oField.value = "";});
+                config.parameters = {
+                    "label": config.topic,
+                    "splitLayout": config.splitLayout || false,
+                    "sy": sy,
+                    "cy": cy,
+                    "dialogHeight": height + 150,
+                    "dialogWidth": width,
+                    "dialogContentHeight": height + 100,
+                    "dialogContentWidth": width - 50,
+                    "width": width,
+                    "height": height,
+                    "rowHeight": rowHeight,
+                    "rowCount": rowCount
+                };
+                config.formClass = config.splitLayout ? "formElementSplit" : "formElement";
+                return String.raw`<md-dialog md-theme="{{ dialog.theme || dialog.defaultTheme }}" aria-label="{{ dialog.ariaLabel }}" ng-class="dialog.css" style="height:{{dialog.parameters.dialogHeight}}px; width:{{dialog.parameters.dialogWidth}}px">
+                    <md-dialog-content class="md-dialog-content nr-dashboard-form" role="document" tabIndex="-1" style="left: 0px; top: 0px; height:{{dialog.parameters.dialogContentHeight}}px; width:{{dialog.parameters.dialogContentWidth}}px">
+                        <h2 class="md-title">{{dialog.title}}</h2>
+                        <div class="md-dialog-content-body"><p>{{::dialog.textContent}}</p></div>
+                        <form name ="form" style="margin-top:0px" style="left: 0px; top: 0px;">
+                            <div class="{{ dialog.formClass }}" ng-class="{'formElementSplit':(dialog.parameters.splitLayout)}" layout-gt-sm="row" ng-repeat="item in dialog.fields track by $index" style="height:{{dialog.parameters.rowHeight}}px">
+                                <md-input-container class="md-block md-auto-horizontal-margin flex" flex>
+                                    <label ng-if="(item.type=='text' || item.type=='number' || item.type=='email' || item.type=='password' || item.type=='date' || item.type=='time')  && item.label">{{item.label}}</label>
+                                    <input ng-if="item.type=='text' || item.type=='email' || item.type=='password'" type="{{item.type}}"
+                                        ng-model="item.value"
+                                        ng-required="item.required" 
+                                        ng-keydown="dialog.stop($event)">
+                                    <input ng-if="item.type=='date'" type="{{item.type}}"
+                                        ng-model="item.value"
+                                        ng-required="item.required"
+                                        placeholder="yyyy-mm-dd"
+                                        ng-keydown="dialog.stop($event)">
+                                    <input ng-if="item.type=='time'" type="{{item.type}}"
+                                        ng-model="item.value"
+                                        ng-required="item.required"
+                                        placeholder="HH:MM"
+                                        ng-keydown="dialog.stop($event)">
+                                    <input ng-if="item.type=='number'" type="{{item.type}}"
+                                        ng-model="item.value"
+                                        ng-required="item.required"
+                                        step="any"
+                                        ng-keydown="dialog.stop($event)">
+                                    <md-switch ng-if="item.type=='switch'" md-no-ink ng-model="item.value">{{item.label}}</md-switch>
+                                    <md-checkbox ng-if="item.type=='checkbox'" md-no-ink aria-label="Checkbox No Ink" ng-model="item.value"> {{item.label}}</md-checkbox>
+                                </md-input-container>
+                            </div>
+                        </form>
+                    </md-dialog-content>    
+                    <md-dialog-actions>
+                        <md-button ng-click="dialog.abort()" class="md-primary md-cancel-button">{{ dialog.cancel }}</md-button>
+                        <md-button ng-click="dialog.hide()" class="md-primary md-confirm-button" md-autofocus="dialog.$type===\'alert\'" ng-disabled="dialog.required && !dialog.result">{{ dialog.ok }}</md-button>
+                    </md-dialog-actions>
+                </md-dialog>`;
+            };
+            dialog._options.template = getTemplate(msg); //"partials/dialog.html";   //getTemplate(msg);
+
+            $mdDialog.show(dialog, { panelClass:'nr-dashboard-dialog' }).then(
+                fnConfirm,
+                function() {
+                    msg.msg.payload = msg.cancel;
+                    events.emit({ id:msg.id, value:msg.msg });
+                }
+            );
+        });
+
         events.on('ui-control', function(msg) {
             if (msg.hasOwnProperty("socketid") && (msg.socketid !== events.id) ) { return; }
             if (msg.hasOwnProperty("control")) { // if it's a request to modify a control
