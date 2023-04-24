@@ -713,23 +713,12 @@ app.controller('MainController', ['$mdSidenav', '$window', 'UiEvents', '$locatio
                 msg.message = temp.innerHTML;
             }
             if (msg.message == "") { $mdDialog.cancel(); return; }
-            let dialog = $mdDialog.prompt()
-                .title(msg.title)
-                .htmlContent(msg.message)
-                .initialValue("")
-                .ariaLabel(msg.ok + " or " + msg.cancel)
-                .ok(msg.msg.ok || msg.ok)
-                .cancel(msg.msg.cancel || msg.cancel);
-            dialog._options.focusOnOpen = false;
-            dialog._options.fields = msg.fields;
-            dialog._options.parameters = msg.parameters;
 
             let fnConfirm = function(res) {
-                debugger;
-                dialog.msg.payload = dialog.ok;
+                msg.msg.payload = msg.ok;
                 let oResult = {};
                 let bError = false;
-                dialog.fields.forEach( oField => {
+                msg.fields.forEach( oField => {
                     if ( oField.required && !oField.value && oField.typ2 !== 'switch' ) {
                         bError = true;
                         console.log("Value missing for field: " + oField.label );
@@ -750,41 +739,19 @@ app.controller('MainController', ['$mdSidenav', '$window', 'UiEvents', '$locatio
                     }
                 });
                 if (!bError) {
-                    dialog.msg.payload = oResult;
-                    if (oResult === {}) { dialog.msg.payload = ""; }
-                    this.events.emit({ id: dialog.id, value:dialog.msg });
+                    msg.msg.payload = oResult;
+                    if (oResult === {}) { msg.msg.payload = ""; }
+                    events.emit({ id: msg.id, value:msg.msg });
                 }
             };
             let getTemplate = function(config) {
-                let sy = ui.getSizes().sy;
-                let cy = ui.getSizes().cy;
-                let rowHeight = sy;
-                let height = rowHeight * ((config.splitLayout == true) ? Math.ceil(config.options.length/2) : config.options.length);
-                let width = (config.splitLayout == true) ? 450 : 250;
-                let rowCount = (config.splitLayout == true) ? Math.ceil(config.options.length/2) : config.options.length;
-                rowCount += config.topic == '' ? 1 : 2
-                config.options.forEach( oField => {oField.value = "";});
-                config.parameters = {
-                    "label": config.topic,
-                    "splitLayout": config.splitLayout || false,
-                    "sy": sy,
-                    "cy": cy,
-                    "dialogHeight": height + 150,
-                    "dialogWidth": width,
-                    "dialogContentHeight": height + 100,
-                    "dialogContentWidth": width - 50,
-                    "width": width,
-                    "height": height,
-                    "rowHeight": rowHeight,
-                    "rowCount": rowCount
-                };
-                config.formClass = config.splitLayout ? "formElementSplit" : "formElement";
-                return String.raw`<md-dialog md-theme="{{ dialog.theme || dialog.defaultTheme }}" aria-label="{{ dialog.ariaLabel }}" ng-class="dialog.css" style="height:{{dialog.parameters.dialogHeight}}px; width:{{dialog.parameters.dialogWidth}}px">
-                    <md-dialog-content class="md-dialog-content nr-dashboard-form" role="document" tabIndex="-1" style="left: 0px; top: 0px; height:{{dialog.parameters.dialogContentHeight}}px; width:{{dialog.parameters.dialogContentWidth}}px">
+                config.fields.forEach( oField => {oField.value = "";});
+                let sTemplate = String.raw`<md-dialog md-theme="{{ dialog.theme || dialog.defaultTheme }}" aria-label="{{ dialog.ariaLabel }}" ng-class="dialog.css" style="height: {{ dialog.dialogHeight }}px; width: {{ dialog.dialogWidth }}px">
+                    <md-dialog-content class="md-dialog-content nr-dashboard-form" role="document" tabIndex="-1" style="left: 0px; top: 0px; height: {{ dialog.dialogContentHeight }}px; width: {{ dialog.dialogContentWidth }}px">
                         <h2 class="md-title">{{dialog.title}}</h2>
                         <div class="md-dialog-content-body"><p>{{::dialog.textContent}}</p></div>
                         <form name ="form" style="margin-top:0px" style="left: 0px; top: 0px;">
-                            <div class="{{ dialog.formClass }}" ng-class="{'formElementSplit':(dialog.parameters.splitLayout)}" layout-gt-sm="row" ng-repeat="item in dialog.fields track by $index" style="height:{{dialog.parameters.rowHeight}}px">
+                            <div class="{{ dialog.formClass }}" ng-class="{'formElementSplit':(dialog.splitLayout)}" layout-gt-sm="row" ng-repeat="item in dialog.fields track by $index" style="height:{{ dialog.rowHeight }}px">
                                 <md-input-container class="md-block md-auto-horizontal-margin flex" flex>
                                     <label ng-if="(item.type=='text' || item.type=='number' || item.type=='email' || item.type=='password' || item.type=='date' || item.type=='time')  && item.label">{{item.label}}</label>
                                     <input ng-if="item.type=='text' || item.type=='email' || item.type=='password'" type="{{item.type}}"
@@ -814,10 +781,29 @@ app.controller('MainController', ['$mdSidenav', '$window', 'UiEvents', '$locatio
                     </md-dialog-content>    
                     <md-dialog-actions>
                         <md-button ng-click="dialog.abort()" class="md-primary md-cancel-button">{{ dialog.cancel }}</md-button>
-                        <md-button ng-click="dialog.hide()" class="md-primary md-confirm-button" md-autofocus="dialog.$type===\'alert\'" ng-disabled="dialog.required && !dialog.result">{{ dialog.ok }}</md-button>
+                        <md-button ng-click="dialog.hide()" class="md-primary md-confirm-button" md-autofocus="dialog.$type==='alert'" ng-disabled="dialog.required && !dialog.result">{{ dialog.ok }}</md-button>
                     </md-dialog-actions>
                 </md-dialog>`;
+                return sTemplate;
             };
+
+            let dialog = $mdDialog.prompt()
+                .title(msg.title || msg.topic)
+                .htmlContent(msg.message)
+                .initialValue("")
+                .ariaLabel(msg.ok + " or " + msg.cancel)
+                .ok(msg.msg.ok || msg.ok)
+                .cancel(msg.msg.cancel || msg.cancel);
+            dialog._options.focusOnOpen = false;
+            dialog._options.fields = msg.fields;
+            dialog._options.rowHeight = msg.rowHeight;
+            dialog._options.splitLayout = msg.splitLayout;
+            dialog._options.dialogHeight = msg.dialogHeight,
+            dialog._options.dialogWidth = msg.dialogWidth;
+            dialog._options.dialogContentHeight = msg.dialogContentHeight;
+            dialog._options.dialogContentWidth = msg.dialogContentWidth;
+            dialog._options.ariaLabel = msg.ariaLabel;
+            dialog._options.formClass = msg.formClass;
             dialog._options.template = getTemplate(msg); //"partials/dialog.html";   //getTemplate(msg);
 
             $mdDialog.show(dialog, { panelClass:'nr-dashboard-dialog' }).then(
