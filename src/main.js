@@ -735,8 +735,8 @@ app.controller('MainController', ['$mdSidenav', '$window', 'UiEvents', '$locatio
                                     <input ng-if="item.type=='date'" type="{{item.type}}"
                                         ng-model="item.value"
                                         ng-required="item.required"
-                                        placeholder="yyyy-mm-dd"
-                                        ng-keydown="dialog.stop($event)">
+                                        ng-keydown="dialog.stop($event)"
+                                        placeholder="yyyy-mm-dd">
                                     <input ng-if="item.type=='time'" type="{{item.type}}"
                                         ng-model="item.value"
                                         ng-required="item.required"
@@ -779,6 +779,26 @@ app.controller('MainController', ['$mdSidenav', '$window', 'UiEvents', '$locatio
             dialog._options.ariaLabel = msg.ariaLabel;
             dialog._options.formClass = msg.formClass;
             dialog._options.template = getTemplate(msg); //"partials/dialog.html";   //getTemplate(msg);
+
+            dialog.stop = function(event) {
+                if ((event.charCode === 13) || (event.which === 13)) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+            };
+
+            dialog.reset = function () {
+                for (var x in dialog.fields) {
+                    if (dialog.fields[x].type === "checkbox" || dialog.fields[x].type === "switch") {
+                        dialog.fields[x].value = false;
+                    }
+                    else {
+                        dialog.fields[x].value = "";
+                    }
+                }
+                $scope.$$childTail.form.$setUntouched();
+                $scope.$$childTail.form.$setPristine();
+            };
 
             $mdDialog.show(dialog, { panelClass:'nr-dashboard-dialog' }).then(
                 fnConfirm,
