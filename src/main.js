@@ -687,7 +687,7 @@ app.controller('MainController', ['$mdSidenav', '$window', 'UiEvents', '$locatio
                 msg.message = temp.innerHTML;
             }
             if (msg.message == "") { $mdDialog.cancel(); return; }
-
+            let that = this;
             let fnConfirm = function(res) {
                 msg.msg.payload = msg.ok;
                 let oResult = {};
@@ -724,7 +724,7 @@ app.controller('MainController', ['$mdSidenav', '$window', 'UiEvents', '$locatio
                     <md-dialog-content class="md-dialog-content nr-dashboard-form" role="document" tabIndex="-1" style="left: 0px; top: 0px; height: {{ dialog.dialogContentHeight }}px; width: {{ dialog.dialogContentWidth }}px">
                         <h2 class="md-title">{{dialog.title}}</h2>
                         <div class="md-dialog-content-body"><p>{{::dialog.textContent}}</p></div>
-                        <form name ="form" style="margin-top:0px" style="left: 0px; top: 0px;">
+                        <form name ="form" ng-submit="dialog.submit(form)" style="margin-top:0px" style="left: 0px; top: 0px;">
                             <div class="{{ dialog.formClass }}" ng-class="{'formElementSplit':(dialog.splitLayout)}" layout-gt-sm="row" ng-repeat="item in dialog.fields track by $index" style="height:{{ dialog.rowHeight }}px">
                                 <md-input-container class="md-block md-auto-horizontal-margin flex" flex>
                                     <label ng-if="(item.type=='text' || item.type=='number' || item.type=='email' || item.type=='password' || item.type=='date' || item.type=='time')  && item.label">{{item.label}}</label>
@@ -751,12 +751,16 @@ app.controller('MainController', ['$mdSidenav', '$window', 'UiEvents', '$locatio
                                     <md-checkbox ng-if="item.type=='checkbox'" md-no-ink aria-label="Checkbox No Ink" ng-model="item.value"> {{item.label}}</md-checkbox>
                                 </md-input-container>
                             </div>
+                            <div class="form-control" ng-class="{'form-control-single':dialog.cancel == '','form-control-no-label':dialog.label == ''}" style="margin-top:{{( dialog.label =='' ? dialog.rowCount < 3 ? dialog.rowHeight * 0.4 : dialog.rowHeight * 0.2 : dialog.rowHeight * -0.1)}}px;">
+                                <md-button class="md-raised nr-dashboard-form-button" type="submit" style="height:{{(dialog.sy -4)}}px;line-height:{{(dialog.sy -4)}}px" ng-click="dialog.submit()">{{dialog.ok}}</md-button>
+                                <md-button ng-if="dialog.cancel != ''" class="md-raised nr-dashboard-form-button" style="height:{{(dialog.sy -4)}}px;line-height:{{(dialog.sy -4)}}px"  ng-click="dialog.abort()">{{dialog.cancel}}</md-button>
+                            </div>
                         </form>
                     </md-dialog-content>    
-                    <md-dialog-actions>
+                    <!--md-dialog-actions>
                         <md-button ng-click="dialog.abort()" class="md-primary md-cancel-button">{{ dialog.cancel }}</md-button>
                         <md-button ng-click="dialog.hide()" class="md-primary md-confirm-button" md-autofocus="dialog.$type==='alert'" ng-disabled="dialog.required && !dialog.result">{{ dialog.ok }}</md-button>
-                    </md-dialog-actions>
+                    </md-dialog-actions> -->
                 </md-dialog>`;
                 return sTemplate;
             };
@@ -768,6 +772,8 @@ app.controller('MainController', ['$mdSidenav', '$window', 'UiEvents', '$locatio
                 .ariaLabel(msg.ok + " or " + msg.cancel)
                 .ok(msg.msg.ok || msg.ok)
                 .cancel(msg.msg.cancel || msg.cancel);
+
+            dialog._options.msg = msg;
             dialog._options.focusOnOpen = false;
             dialog._options.fields = msg.fields;
             dialog._options.rowHeight = msg.rowHeight;
@@ -780,28 +786,32 @@ app.controller('MainController', ['$mdSidenav', '$window', 'UiEvents', '$locatio
             dialog._options.formClass = msg.formClass;
             dialog._options.template = getTemplate(msg); //"partials/dialog.html";   //getTemplate(msg);
 
-            dialog.stop = function(event) {
-                if ((event.charCode === 13) || (event.which === 13)) {
-                    event.preventDefault();
-                    event.stopPropagation();
+            let getFunctionFromString = function(value) {
+                if (typeof String.prototype.parseFunction != 'function') {
+                    String.prototype.parseFunction = function () {
+                        let funcReg = /function *\(([^()]*)\)[ \n\t]*{([\n\t]*.*[\n\t]*)*}/gmi;
+                        const match = funcReg.exec(this.replace(/\n/g, ' '));
+                        if (match) {
+                            return new Function(match[1].split(','), match[2]);
+                        }
+                        return null;
+                    };
                 }
-            };
-
-            dialog.reset = function () {
-                for (var x in dialog.fields) {
-                    if (dialog.fields[x].type === "checkbox" || dialog.fields[x].type === "switch") {
-                        dialog.fields[x].value = false;
-                    }
-                    else {
-                        dialog.fields[x].value = "";
-                    }
+                let valueFunction;
+                let fnFunction = null;
+                if (typeof value === "string" && (valueFunction = value.parseFunction())) {
+                    fnFunction=valueFunction.bind({ dialog: dialog._options, $scope: $scope, events: events, $mdDialog: $mdDialog }); // to enable this.send() for callback functions.
                 }
-                $scope.$$childTail.form.$setUntouched();
-                $scope.$$childTail.form.$setPristine();
+                return fnFunction;
             };
+    
+            dialog._options.confirm = getFunctionFromString(msg.fnConfirm);
+            dialog._options.submit = getFunctionFromString(msg.fnSubmit);
+            dialog._options.stop = getFunctionFromString(msg.fnStop);
+            dialog._options.reset = getFunctionFromString(msg.fnReset);
 
             $mdDialog.show(dialog, { panelClass:'nr-dashboard-dialog' }).then(
-                fnConfirm,
+                dialog._options.confirm,
                 function() {
                     msg.msg.payload = msg.cancel;
                     events.emit({ id:msg.id, value:msg.msg });
