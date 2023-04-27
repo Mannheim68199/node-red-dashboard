@@ -687,25 +687,33 @@ app.controller('MainController', ['$mdSidenav', '$window', 'UiEvents', '$locatio
                 msg.message = temp.innerHTML;
             }
             if (msg.message == "") { $mdDialog.cancel(); return; }
-            let that = this;
+
             let fnConfirm = function(res) {
                 msg.msg.payload = msg.ok;
                 let oResult = {};
                 let bError = false;
                 msg.fields.forEach( oField => {
-                    if ( oField.required && !oField.value && oField.typ2 !== 'switch' ) {
+                    if ( oField.required && !oField.value && oField.typ !== 'switch' && oField.typ !== 'checkbox' ) {
                         bError = true;
-                        console.log("Value missing for field: " + oField.label );
                     } else {
+                        oResult[oField.label] = null;
                         switch (oField.type) {
                             case "time":
-                                let dDateTime = new Date(oField.value);
-                                oResult[oField.label] = dDateTime.toLocaleString().substring(10,15);
+                                if ( oField.value ) {
+                                    let dDateTime = new Date(oField.value);
+                                    oResult[oField.label] = dDateTime.toLocaleString().substring(10,15);
+                                }
                                 break;
                             case "date":
-                                let dDate = new Date(oField.value);
-                                dDate.setHours(dDate.getHours()+12);
-                                oResult[oField.label] = dDate.toISOString().substring(0,10) || "";
+                                if ( oField.value ) {
+                                    let dDate = new Date(oField.value);
+                                    dDate.setHours(dDate.getHours()+12);
+                                    oResult[oField.label] = dDate.toISOString().substring(0,10) || "";
+                                }
+                                break;
+                            case "switch":
+                            case "checkbox":
+                                oResult[oField.label] = ( oField.value ) ? true : false;
                                 break;
                             default:
                                 oResult[oField.label] = oField.value;
@@ -721,10 +729,10 @@ app.controller('MainController', ['$mdSidenav', '$window', 'UiEvents', '$locatio
             let getTemplate = function(config) {
                 config.fields.forEach( oField => {oField.value = "";});
                 let sTemplate = String.raw`<md-dialog md-theme="{{ dialog.theme || dialog.defaultTheme }}" aria-label="{{ dialog.ariaLabel }}" ng-class="dialog.css" style="height: {{ dialog.dialogHeight }}px; width: {{ dialog.dialogWidth }}px">
-                    <md-dialog-content class="md-dialog-content nr-dashboard-form" role="document" tabIndex="-1" style="left: 0px; top: 0px; height: {{ dialog.dialogContentHeight }}px; width: {{ dialog.dialogContentWidth }}px">
+                    <md-dialog-content class="md-dialog-content nr-dashboard-form" role="document" tabIndex="-1" style="left: 0px; top: -10px; height: {{ dialog.dialogContentHeight }}px; width: {{ dialog.dialogContentWidth }}px">
                         <h2 class="md-title">{{dialog.title}}</h2>
                         <div class="md-dialog-content-body"><p>{{::dialog.textContent}}</p></div>
-                        <form name ="form" ng-submit="dialog.submit(form)" style="margin-top:0px" style="left: 0px; top: 0px;">
+                        <form name ="form" ng-submit="dialog.submit(form)" style="margin-top:22px" style="left: 0px; top: 0px;">
                             <div class="{{ dialog.formClass }}" ng-class="{'formElementSplit':(dialog.splitLayout)}" layout-gt-sm="row" ng-repeat="item in dialog.fields track by $index" style="height:{{ dialog.rowHeight }}px">
                                 <md-input-container class="md-block md-auto-horizontal-margin flex" flex>
                                     <label ng-if="(item.type=='text' || item.type=='number' || item.type=='email' || item.type=='password' || item.type=='date' || item.type=='time')  && item.label">{{item.label}}</label>
@@ -751,16 +759,12 @@ app.controller('MainController', ['$mdSidenav', '$window', 'UiEvents', '$locatio
                                     <md-checkbox ng-if="item.type=='checkbox'" md-no-ink aria-label="Checkbox No Ink" ng-model="item.value"> {{item.label}}</md-checkbox>
                                 </md-input-container>
                             </div>
-                            <div class="form-control" ng-class="{'form-control-single':dialog.cancel == '','form-control-no-label':dialog.label == ''}" style="margin-top:{{( dialog.label =='' ? dialog.rowCount < 3 ? dialog.rowHeight * 0.4 : dialog.rowHeight * 0.2 : dialog.rowHeight * -0.1)}}px;">
-                                <md-button class="md-raised nr-dashboard-form-button" type="submit" style="height:{{(dialog.sy -4)}}px;line-height:{{(dialog.sy -4)}}px" ng-click="dialog.submit()">{{dialog.ok}}</md-button>
-                                <md-button ng-if="dialog.cancel != ''" class="md-raised nr-dashboard-form-button" style="height:{{(dialog.sy -4)}}px;line-height:{{(dialog.sy -4)}}px"  ng-click="dialog.abort()">{{dialog.cancel}}</md-button>
+                            <div class="form-control" ng-class="{'form-control-single':dialog.cancel == '','form-control-no-label':dialog.label == ''}" style="margin-top:{{(dialog.rowHeight * 0.25)}}px;">
+                                <md-button class="md-raised nr-dashboard-form-button" type="submit" ng-click="dialog.submit()">{{dialog.ok}}</md-button>
+                                <md-button class="md-raised nr-dashboard-form-button" ng-click="dialog.abort()">{{dialog.cancel}}</md-button>
                             </div>
                         </form>
                     </md-dialog-content>    
-                    <!--md-dialog-actions>
-                        <md-button ng-click="dialog.abort()" class="md-primary md-cancel-button">{{ dialog.cancel }}</md-button>
-                        <md-button ng-click="dialog.hide()" class="md-primary md-confirm-button" md-autofocus="dialog.$type==='alert'" ng-disabled="dialog.required && !dialog.result">{{ dialog.ok }}</md-button>
-                    </md-dialog-actions> -->
                 </md-dialog>`;
                 return sTemplate;
             };
@@ -773,7 +777,6 @@ app.controller('MainController', ['$mdSidenav', '$window', 'UiEvents', '$locatio
                 .ok(msg.msg.ok || msg.ok)
                 .cancel(msg.msg.cancel || msg.cancel);
 
-            dialog._options.msg = msg;
             dialog._options.focusOnOpen = false;
             dialog._options.fields = msg.fields;
             dialog._options.rowHeight = msg.rowHeight;
@@ -784,34 +787,27 @@ app.controller('MainController', ['$mdSidenav', '$window', 'UiEvents', '$locatio
             dialog._options.dialogContentWidth = msg.dialogContentWidth;
             dialog._options.ariaLabel = msg.ariaLabel;
             dialog._options.formClass = msg.formClass;
-            dialog._options.template = getTemplate(msg); //"partials/dialog.html";   //getTemplate(msg);
-
-            let getFunctionFromString = function(value) {
-                if (typeof String.prototype.parseFunction != 'function') {
-                    String.prototype.parseFunction = function () {
-                        let funcReg = /function *\(([^()]*)\)[ \n\t]*{([\n\t]*.*[\n\t]*)*}/gmi;
-                        const match = funcReg.exec(this.replace(/\n/g, ' '));
-                        if (match) {
-                            return new Function(match[1].split(','), match[2]);
-                        }
-                        return null;
-                    };
+            dialog._options.template = getTemplate(msg);
+            dialog._options.submit = function () {
+                let bError = false;
+                this.fields.forEach( oField => {
+                    if ( oField.required && !oField.value && oField.typ !== 'switch' && oField.typ !== 'checkbox' ) {
+                        bError = true;
+                    }
+                });
+                if (!bError) {
+                    this.hide();
                 }
-                let valueFunction;
-                let fnFunction = null;
-                if (typeof value === "string" && (valueFunction = value.parseFunction())) {
-                    fnFunction=valueFunction.bind({ dialog: dialog._options, $scope: $scope, events: events, $mdDialog: $mdDialog }); // to enable this.send() for callback functions.
-                }
-                return fnFunction;
             };
-    
-            dialog._options.confirm = getFunctionFromString(msg.fnConfirm);
-            dialog._options.submit = getFunctionFromString(msg.fnSubmit);
-            dialog._options.stop = getFunctionFromString(msg.fnStop);
-            dialog._options.reset = getFunctionFromString(msg.fnReset);
+            dialog._options.stop = function(event) {
+                if ((event.charCode === 13) || (event.which === 13)) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+            };
 
             $mdDialog.show(dialog, { panelClass:'nr-dashboard-dialog' }).then(
-                dialog._options.confirm,
+                fnConfirm,
                 function() {
                     msg.msg.payload = msg.cancel;
                     events.emit({ id:msg.id, value:msg.msg });
