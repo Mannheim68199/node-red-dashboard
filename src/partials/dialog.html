@@ -1,9 +1,9 @@
-<md-dialog md-theme="{{ dialog.theme || dialog.defaultTheme }}" aria-label="{{ dialog.ariaLabel }}" ng-class="dialog.css" style="height:{{dialog.parameters.dialogHeight}}px; width:{{dialog.parameters.dialogWidth}}px">
-    <md-dialog-content class="md-dialog-content nr-dashboard-form" role="document" tabIndex="-1" style="left: 0px; top: 0px; height:{{dialog.parameters.dialogContentHeight}}px; width:{{dialog.parameters.dialogContentWidth}}px">
+<md-dialog md-theme="{{ dialog.theme || dialog.defaultTheme }}" aria-label="{{ dialog.ariaLabel }}" ng-class="dialog.css" style="height: {{ dialog.dialogHeight }}px; width: {{ dialog.dialogWidth }}px">
+    <md-dialog-content class="md-dialog-content nr-dashboard-form" role="document" tabIndex="-1" style="left: 0px; top: -10px; height: {{ dialog.dialogContentHeight }}px; width: {{ dialog.dialogContentWidth }}px">
         <h2 class="md-title">{{dialog.title}}</h2>
         <div class="md-dialog-content-body"><p>{{::dialog.textContent}}</p></div>
-        <form name ="form" style="margin-top:0px" style="left: 0px; top: 0px;">
-            <div class="{{ dialog.formClass }}" ng-class="{'formElementSplit':(dialog.parameters.splitLayout)}" layout-gt-sm="row" ng-repeat="item in dialog.fields track by $index" style="height:{{dialog.parameters.rowHeight}}px">
+        <form name ="form" ng-submit="dialog.submit(form)" style="margin-top:22px" style="left: 0px; top: 0px;">
+            <div class="{{ dialog.formClass }}" ng-class="{'formElementSplit':(dialog.splitLayout)}" layout-gt-sm="row" ng-repeat="item in dialog.fields track by $index" style="height:{{ dialog.rowHeight }}px">
                 <md-input-container class="md-block md-auto-horizontal-margin flex" flex>
                     <label ng-if="(item.type=='text' || item.type=='number' || item.type=='email' || item.type=='password' || item.type=='date' || item.type=='time')  && item.label">{{item.label}}</label>
                     <input ng-if="item.type=='text' || item.type=='email' || item.type=='password'" type="{{item.type}}"
@@ -13,8 +13,8 @@
                     <input ng-if="item.type=='date'" type="{{item.type}}"
                         ng-model="item.value"
                         ng-required="item.required"
-                        placeholder="yyyy-mm-dd"
-                        ng-keydown="dialog.stop($event)">
+                        ng-keydown="dialog.stop($event)"
+                        placeholder="yyyy-mm-dd">
                     <input ng-if="item.type=='time'" type="{{item.type}}"
                         ng-model="item.value"
                         ng-required="item.required"
@@ -29,10 +29,10 @@
                     <md-checkbox ng-if="item.type=='checkbox'" md-no-ink aria-label="Checkbox No Ink" ng-model="item.value"> {{item.label}}</md-checkbox>
                 </md-input-container>
             </div>
+            <div class="form-control" ng-class="{'form-control-single':dialog.cancel == '','form-control-no-label':dialog.label == ''}" style="margin-top:{{(dialog.rowHeight * 0.25)}}px;">
+                <md-button class="md-raised nr-dashboard-form-button" type="submit" ng-click="dialog.submit()">{{dialog.ok}}</md-button>
+                <md-button class="md-raised nr-dashboard-form-button" ng-click="dialog.abort()">{{dialog.cancel}}</md-button>
+            </div>
         </form>
-    </md-dialog-content>    
-    <md-dialog-actions>
-        <md-button ng-if="dialog.$type === \'confirm\' || dialog.$type === \'prompt\'"ng-click="dialog.abort()" class="md-primary md-cancel-button">{{ dialog.cancel }}</md-button>
-        <md-button ng-click="dialog.hide()" class="md-primary md-confirm-button" md-autofocus="dialog.$type===\'alert\'" ng-disabled="dialog.required && !dialog.result">{{ dialog.ok }}</md-button>
-    </md-dialog-actions>
+    </md-dialog-content>
 </md-dialog>
