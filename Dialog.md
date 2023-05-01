@@ -13,8 +13,9 @@ The enhancements for the Input Dialog Popup are devided into enhancements of the
 The Dialog Setup  and the Dialog Popup looks like:
 
 
-|                      <img src="./src/DialogSetup.png" width="250">        |          <img src="./src/DialogPopup.png" width="250">            |
-
+|------------|-------------| 
+|             <img src="./src/DialogSetup.png" width="250">        |          <img src="./src/DialogPopup.png" width="250">           |
+|------------|-------------| 
 
 
 ### Input Dialog
