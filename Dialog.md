@@ -19,3 +19,7 @@ The  `Dialog Setup`  and the resulting   `Dialog Popup`   looks like:
 |------------|-------------| 
 
 
+## Changes
+
+* src/main.js
+* Dialog.md
