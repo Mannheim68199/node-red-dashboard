@@ -9,7 +9,7 @@ To create an input popup dialog  with several fields of types like:  `text`, `nu
 The fields could be marked as `required`, which leads to validation checks before the popup dialog is closed.
 
 The enhancements for the Input Dialog Popup are devided into enhancements of the node-red-dashboard main.js file and an own node named: 
-[node-red-contrib-multi-input-dialog](https://github.com/Mannheim68199/node-red-contrib-multi-input-dialog/tree/dialog)
+[node-red-contrib-multi-input-dialog](https://github.com/Mannheim68199/node-red-contrib-multi-input-dialog/tree/dialog) ( branch: dialog )
 
 The  `Dialog Setup`  and the resulting   `Dialog Popup`   looks like:
 
