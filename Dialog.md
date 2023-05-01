@@ -18,5 +18,3 @@ The  `Dialog Setup`  and the resulting   `Dialog Popup`   looks like:
 |------------|-------------| 
 
 
-### Input Dialog
-
