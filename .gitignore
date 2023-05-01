@@ -1,4 +1,9 @@
 /node_modules
 node-*.tgz
+package.json
 package-lock.json
 .DS_Store
+.config*
+flows.json
+.sessions.json
+.node-red.*
