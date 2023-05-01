@@ -2,7 +2,7 @@
 
 
 
-## Customziable Input Dialog Popup
+## Overview
 
 To create an input popup dialog  with several fields of types like:  `text`, `number`, `date`, `time`, `checkbox`, `email` and `password`  placed in one or two rows
 
