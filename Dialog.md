@@ -23,3 +23,11 @@ The  `Dialog Setup`  and the resulting   `Dialog Popup`   looks like:
 
 * src/main.js
 * Dialog.md
+* dist/js/app.min.js
+* src/DialogSetup.png
+* src/DialogPopup.png
+* partials/dialog.html (not used currently)
+
+## Setup
+
+To test the new node you have to replace the app.min.js file in your node-red-dashboard dist/js folder with the app.min.js file of this project and install the new dialog node with `git clone https://github.com/Mannheim68199/node-red-contrib-multi-input-dialog.git`
