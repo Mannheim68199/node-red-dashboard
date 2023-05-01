@@ -10,7 +10,7 @@ The fields could be marked as `required`, which leads to validation checks befor
 
 The enhancements for the Input Dialog Popup are devided into enhancements of the node-red-dashboard main.js file and into an own node named:  node-red-contrib-multi-input-dialog
 
-![Dialog Popup example](./src/DialogPopup.JPG)
+![Dialog Popup example](./src/DialogPopup2.png)
 
 ### Input Dialog
 
