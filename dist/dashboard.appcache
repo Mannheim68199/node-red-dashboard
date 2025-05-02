@@ -1,5 +1,5 @@
 CACHE MANIFEST
-# Time: Tue Mar 12 2024 15:31:00 GMT+0000 (Greenwich Mean Time)
+# Time: Fri May 02 2025 20:47:15 GMT+0200 (Mitteleuropäische Sommerzeit)
 
 CACHE:
 i18n.js
@@ -12,10 +12,13 @@ css/gridstack-extra.min.css
 js/app.min.js
 js/tinycolor-min.js
 socket.io/socket.io.js
-fonts/MaterialIcons-Regular.woff
-fonts/MaterialIcons-Regular.woff2
+js/_app.min.js
+js/_tinycolor-min.js
+socket.io/socket.io.js
 fonts/fontawesome-webfont.woff
 fonts/fontawesome-webfont.woff2
+fonts/MaterialIcons-Regular.woff
+fonts/MaterialIcons-Regular.woff2
 fonts/weather-icons-lite.woff
 fonts/weather-icons-lite.woff2
 gs/gridstack.jQueryUI.min.js
@@ -26,4 +29,4 @@ loading.html
 NETWORK:
 *
 
-# hash: 87be8dffba3951bcf42145449686dd474231b08260117d82c7fe94178f6cddc9
+# hash: 48a7e6f723077a6fa6e8cd66e624c563a2df8606853fb614e658dc2f54598bf3
